@@ -11,6 +11,7 @@ import OrderTrackingPage from './Pages/OrderTrackingPage'
 import WishlistPage from './Pages/WishlistPage'
 import SignInPage from './Pages/SignInPage'
 import GoogleAuthCallbackPage from './Pages/GoogleAuthCallbackPage'
+import AdminDashboardPage from './Pages/AdminDashboardPage'
 
 
 // stores cart, wishlist, and order history in localStorage
@@ -136,6 +137,22 @@ function App() {
     setCartItems((current) => current.filter((item) => item.id !== productId))
   }
 
+  const updateOrderItemReview = (orderId, itemKey, patch) => {
+    setOrders((current) =>
+      current.map((order) => {
+        if (order.id !== orderId) return order
+
+        return {
+          ...order,
+          items: (order.items || []).map((item) => {
+            const currentKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
+            return currentKey === itemKey ? { ...item, ...patch } : item
+          }),
+        }
+      }),
+    )
+  }
+
   const placeOrder = (checkoutDetails) => {
     const etaDate = new Date()
     etaDate.setDate(etaDate.getDate() + 1)
@@ -207,6 +224,7 @@ function App() {
             wishlistItems={wishlistItems}
             cartCount={cartCount}
             wishlistCount={wishlistCount}
+            isInCart={isInCart}
             onToggleWishlist={toggleWishlist}
             onRemoveWishlistItem={removeWishlistItem}
             onAddToCart={addToCart}
@@ -242,7 +260,24 @@ function App() {
       />
       <Route
         path="/order/tracking"
-        element={<OrderTrackingPage orders={orders} wishlistCount={wishlistCount} />}
+        element={
+          <OrderTrackingPage
+            orders={orders}
+            wishlistCount={wishlistCount}
+            onUpdateOrderItemReview={updateOrderItemReview}
+          />
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminDashboardPage
+            orders={orders}
+            cartItems={cartItems}
+            wishlistItems={wishlistItems}
+            wishlistCount={wishlistCount}
+          />
+        }
       />
       <Route path="/login" element={<SignInPage />} />
       <Route path="/auth/google/callback" element={<GoogleAuthCallbackPage />} />

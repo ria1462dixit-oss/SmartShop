@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FiHeart, FiShoppingBag, FiUser } from 'react-icons/fi'
-import { clearSession, readSession } from '../lib/auth'
+import { clearSession, isAdminSession, readSession } from '../lib/auth'
 import './store-navbar.css'
 
 
@@ -53,6 +53,7 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
 
   const profileName = session?.user?.name || session?.name || 'Guest user'
   const profileEmail = session?.user?.email || session?.email || 'guest@smartshop.com'
+  const adminEnabled = isAdminSession(session)
 
   const handleLogout = () => {
     clearSession()
@@ -102,6 +103,7 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
                 <strong>{profileName}</strong>
                 <span>{profileEmail}</span>
               </div>
+              {adminEnabled ? <button onClick={() => navigate('/admin')}>Admin panel</button> : null}
               <button onClick={() => navigate('/order/tracking')}>Your orders</button>
               <button onClick={() => window.open('mailto:support@smartshop.com', '_self')}>Query</button>
               <button className="store-profile-logout" onClick={handleLogout}>Logout</button>

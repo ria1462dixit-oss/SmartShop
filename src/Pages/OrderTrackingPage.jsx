@@ -1,12 +1,32 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import StoreNavbar from '../components/StoreNavbar'
 import './orderflow.css'
 
-export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
+export default function OrderTrackingPage({
+  orders = [],
+  wishlistCount = 0,
+  onUpdateOrderItemReview,
+}) {
   const navigate = useNavigate()
   const [ratings, setRatings] = useState({})
   const [feedback, setFeedback] = useState({})
+
+  useEffect(() => {
+    const nextRatings = {}
+    const nextFeedback = {}
+
+    orders.forEach((order) => {
+      ;(order.items || []).forEach((item) => {
+        const itemKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
+        nextRatings[itemKey] = item.rating || 0
+        nextFeedback[itemKey] = item.feedback || ''
+      })
+    })
+
+    setRatings(nextRatings)
+    setFeedback(nextFeedback)
+  }, [orders])
 
   const submitRating = (itemId, value) => {
     setRatings((current) => ({ ...current, [itemId]: value }))
@@ -24,9 +44,13 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
           <div>
             <p>Order tracking</p>
             <h1>{orders.length ? 'Your orders' : 'No recent order'}</h1>
-            {orders.length > 0 && <span className="tracking-eta">All placed orders are shown below.</span>}
+            {orders.length > 0 ? (
+              <span className="tracking-eta">All placed orders are shown below.</span>
+            ) : null}
           </div>
-          <button className="order-secondary-btn" onClick={() => navigate('/category')}>Back to shop</button>
+          <button className="order-secondary-btn" onClick={() => navigate('/category')}>
+            Back to shop
+          </button>
         </div>
 
         {orders.length > 0 ? (
@@ -37,7 +61,7 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                   <div>
                     <p>Order ID</p>
                     <h2>{order.id}</h2>
-                    {order.eta && <span className="tracking-eta">Expected delivery: {order.eta}</span>}
+                    {order.eta ? <span className="tracking-eta">Expected delivery: {order.eta}</span> : null}
                   </div>
                 </div>
 
@@ -47,13 +71,20 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                       <div className="tracking-dot" />
                       <div>
                         <strong>{step.label}</strong>
-                        <p>{step.note || (step.status === 'done' ? 'Completed' : step.status === 'current' ? 'In progress' : 'Waiting')}</p>
+                        <p>
+                          {step.note ||
+                            (step.status === 'done'
+                              ? 'Completed'
+                              : step.status === 'current'
+                                ? 'In progress'
+                                : 'Waiting')}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {order.items?.length > 0 && (
+                {order.items?.length > 0 ? (
                   <div className="tracking-items">
                     <h2>Product delivery updates</h2>
                     <div className="tracking-item-list">
@@ -79,7 +110,11 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                                   <button
                                     className="tracking-action-btn"
                                     onClick={() =>
-                                      window.open('https://prathu-bit12.github.io/Project_Smartshop/', '_blank', 'noopener,noreferrer')
+                                      window.open(
+                                        'https://prathu-bit12.github.io/Project_Smartshop/',
+                                        '_blank',
+                                        'noopener,noreferrer',
+                                      )
                                     }
                                   >
                                     Return
@@ -93,7 +128,10 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                                           key={star}
                                           type="button"
                                           className={Number(ratings[itemKey] || 0) >= star ? 'active' : ''}
-                                          onClick={() => submitRating(itemKey, star)}
+                                          onClick={() => {
+                                            submitRating(itemKey, star)
+                                            onUpdateOrderItemReview?.(order.id, itemKey, { rating: star })
+                                          }}
                                           aria-label={`${star} star`}
                                         >
                                           ★
@@ -109,7 +147,12 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                                       type="text"
                                       placeholder="Write a few words"
                                       value={feedback[itemKey] || ''}
-                                      onChange={(event) => submitFeedback(itemKey, event.target.value)}
+                                      onChange={(event) => {
+                                        submitFeedback(itemKey, event.target.value)
+                                        onUpdateOrderItemReview?.(order.id, itemKey, {
+                                          feedback: event.target.value,
+                                        })
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -122,7 +165,7 @@ export default function OrderTrackingPage({ orders = [], wishlistCount = 0 }) {
                       })}
                     </div>
                   </div>
-                )}
+                ) : null}
               </section>
             ))}
           </div>

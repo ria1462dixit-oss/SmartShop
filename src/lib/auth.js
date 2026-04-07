@@ -3,6 +3,27 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const GOOGLE_REDIRECT_URI =
   import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/google/callback`
 const GOOGLE_SCOPE = import.meta.env.VITE_GOOGLE_SCOPE || 'openid email profile'
+const ADMIN_EMAILS = ['admin@smartshop.com', 'ria1462.dixit@gmail.com']
+export const TEST_ACCOUNTS = {
+  admin: {
+    token: 'smartshop-test-admin-token',
+    user: {
+      id: 'admin-test-user',
+      name: 'Riya Admin',
+      email: 'ria1462.dixit@gmail.com',
+      avatarUrl: '',
+    },
+  },
+  shopper: {
+    token: 'smartshop-test-shopper-token',
+    user: {
+      id: 'shopper-test-user',
+      name: 'Aarav Shopper',
+      email: 'aarav.shopper@smartshop.com',
+      avatarUrl: '',
+    },
+  },
+}
 
 function ensureApiBaseUrl() {
   if (!API_BASE_URL) {
@@ -10,14 +31,28 @@ function ensureApiBaseUrl() {
   }
 }
 
+function validateSessionPayload(data) {
+  if (!data?.token || !data?.user?.email) {
+    throw new Error('Backend auth response is missing token or user.email.')
+  }
+
+  return data
+}
+
 async function postJson(path, payload) {
   ensureApiBaseUrl()
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  let response
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new Error('Cannot reach the auth server. Check VITE_API_BASE_URL and start your backend first.')
+  }
 
   const data = await response.json().catch(() => ({}))
 
@@ -33,7 +68,8 @@ export async function requestEmailOtp(email) {
 }
 
 export async function verifyEmailOtp({ email, otp, mode }) {
-  return postJson('/auth/email/verify-otp', { email, otp, mode })
+  const data = await postJson('/auth/email/verify-otp', { email, otp, mode })
+  return validateSessionPayload(data)
 }
 
 export function beginGoogleOAuth() {
@@ -54,16 +90,17 @@ export function beginGoogleOAuth() {
 }
 
 export async function exchangeGoogleCode(code) {
-  return postJson('/auth/google/exchange', {
+  const data = await postJson('/auth/google/exchange', {
     code,
     redirectUri: GOOGLE_REDIRECT_URI,
   })
+  return validateSessionPayload(data)
 }
 
 export function persistSession(payload) {
-  if (payload) {
-    window.localStorage.setItem('smartshop.session', JSON.stringify(payload))
-  }
+  if (!payload) return
+  const safePayload = validateSessionPayload(payload)
+  window.localStorage.setItem('smartshop.session', JSON.stringify(safePayload))
 }
 
 export function readSession() {
@@ -77,4 +114,15 @@ export function readSession() {
 
 export function clearSession() {
   window.localStorage.removeItem('smartshop.session')
+}
+
+export function isAdminSession(session) {
+  const email = session?.user?.email || session?.email || ''
+  return ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
+}
+
+export function createTestSession(type = 'shopper') {
+  const payload = TEST_ACCOUNTS[type] || TEST_ACCOUNTS.shopper
+  persistSession(payload)
+  return payload
 }

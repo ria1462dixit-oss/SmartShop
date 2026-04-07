@@ -7,6 +7,7 @@ export default function WishlistPage({
   wishlistItems = [],
   cartCount = 0,
   wishlistCount = 0,
+  isInCart,
   onToggleWishlist,
   onRemoveWishlistItem,
   onAddToCart,
@@ -44,6 +45,13 @@ export default function WishlistPage({
         <div className="wishlist-grid">
           {wishlistItems.map((product) => (
             <article key={product.id} className="wishlist-card">
+              {(() => {
+                const selectedSize = product.sizes?.[0] || 'One Size'
+                const selectedColor = product.colors?.[0]?.name || 'Default'
+                const alreadyInCart = isInCart?.(product.id, selectedSize, selectedColor)
+
+                return (
+                  <>
               <div
                 className="wishlist-card-media"
                 onClick={() => navigate(`/product/${product.id}`)}
@@ -82,15 +90,20 @@ export default function WishlistPage({
                 <div className="wishlist-actions">
                   <button
                     className="wishlist-add-btn"
-                    onClick={() =>
+                    onClick={() => {
+                      if (alreadyInCart) {
+                        navigate('/bag')
+                        return
+                      }
+
                       onAddToCart?.(product, {
-                        selectedSize: product.sizes?.[0],
-                        selectedColor: product.colors?.[0]?.name,
+                        selectedSize,
+                        selectedColor,
                       })
-                    }
+                    }}
                   >
                     <FiShoppingBag />
-                    Add to bag
+                    {alreadyInCart ? 'Go to bag' : 'Add to bag'}
                   </button>
                   <button className="wishlist-remove-btn" onClick={() => onRemoveWishlistItem?.(product.id)}>
                     <FiTrash2 />
@@ -98,6 +111,9 @@ export default function WishlistPage({
                   </button>
                 </div>
               </div>
+                  </>
+                )
+              })()}
             </article>
           ))}
         </div>
