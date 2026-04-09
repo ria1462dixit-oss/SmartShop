@@ -761,3 +761,11 @@
     grid-template-columns: 1fr;
   }
 }
+.order-summary-card {
+  padding: 22px;
+  overflow: visible;  
+}
+
+.order-page-shell {
+  overflow-y: auto;
+}
