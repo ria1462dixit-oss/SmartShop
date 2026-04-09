@@ -4,6 +4,7 @@ import express from 'express'
 import { exchangeGoogleCode, requestEmailOtp, verifyEmailOtp } from './auth-service.js'
 import { connectDatabase } from './db.js'
 import { createMailer } from './email.js'
+import { createCheckoutSession } from './stripe.js'
 
 dotenv.config()
 
@@ -65,6 +66,21 @@ app.post('/auth/google/exchange', async (req, res) => {
     res.json(result)
   } catch (error) {
     res.status(400).json({ message: error.message || 'Google sign-in failed.' })
+  }
+})
+
+app.post('/payments/checkout-session', async (req, res) => {
+  try {
+    const result = await createCheckoutSession({
+      env: process.env,
+      items: req.body?.items || [],
+      successUrl: req.body?.successUrl || `${CLIENT_ORIGIN}/order/confirmed`,
+      cancelUrl: req.body?.cancelUrl || `${CLIENT_ORIGIN}/bag`,
+      customerEmail: req.body?.customerEmail,
+    })
+    res.json(result)
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'Unable to create Stripe session.' })
   }
 })
 
