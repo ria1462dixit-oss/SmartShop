@@ -10,7 +10,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FcGoogle } from 'react-icons/fc'
 import { FiArrowLeft, FiCheckCircle, FiMail, FiShield } from 'react-icons/fi'
 import signupBg from '../assets/SignupBG(1).png'
@@ -57,6 +57,9 @@ export default function SignInPage() {
     message: 'Use Google or request a one-time password to continue.',
   })
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedNextPath = searchParams.get('next') || '/'
+  const nextPath = requestedNextPath.startsWith('/') ? requestedNextPath : '/'
 
   useEffect(() => {
     const { style } = document.body
@@ -181,7 +184,7 @@ export default function SignInPage() {
       const payload = await verifyEmailOtp({ email, otp, mode })
       persistSession(payload)
       setStatus({ tone: 'success', message: 'Signed in successfully. Redirecting to the store...' })
-      window.setTimeout(() => navigate('/'), 1000)
+      window.setTimeout(() => navigate(nextPath), 1000)
     } catch (error) {
       setStatus({ tone: 'error', message: error.message })
     } finally {
@@ -191,6 +194,7 @@ export default function SignInPage() {
 
   const signInWithGoogle = () => {
     try {
+      window.localStorage.setItem('smartshop.loginNext', nextPath)
       beginGoogleOAuth()
     } catch (error) {
       setStatus({ tone: 'error', message: error.message })
@@ -203,7 +207,7 @@ export default function SignInPage() {
       tone: 'success',
       message: `${payload.user.name} is signed in with a local test account. Redirecting...`,
     })
-    window.setTimeout(() => navigate('/'), 600)
+    window.setTimeout(() => navigate(nextPath), 600)
   }
 
   return (

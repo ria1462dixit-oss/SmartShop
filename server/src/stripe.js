@@ -6,7 +6,7 @@ function getStripe(secretKey) {
   }
 
   return new Stripe(secretKey, {
-    apiVersion: '2026-02-25.clover',
+    apiVersion: '2024-06-20',
   })
 }
 
@@ -19,7 +19,6 @@ export async function createCheckoutSession({ env, items, successUrl, cancelUrl,
       product_data: {
         name: item.name,
         description: item.title || '',
-        images: item.image ? [item.image] : [],
       },
       unit_amount: Math.round(Number(item.amount || 0) * 100),
     },
@@ -37,6 +36,7 @@ export async function createCheckoutSession({ env, items, successUrl, cancelUrl,
     cancel_url: cancelUrl,
     customer_email: customerEmail || undefined,
     allow_promotion_codes: true,
+    payment_method_types: ['card', 'upi'],
   })
 
   return { id: session.id, url: session.url }

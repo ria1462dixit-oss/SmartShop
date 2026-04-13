@@ -11,6 +11,7 @@ export default function OrderTrackingPage({
   const navigate = useNavigate()
   const [ratings, setRatings] = useState({})
   const [feedback, setFeedback] = useState({})
+  const [submittedReviews, setSubmittedReviews] = useState({})
 
   useEffect(() => {
     const nextRatings = {}
@@ -20,13 +21,13 @@ export default function OrderTrackingPage({
       ;(order.items || []).forEach((item) => {
         const itemKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
         nextRatings[itemKey] = item.rating || 0
-        nextFeedback[itemKey] = item.feedback || ''
+        nextFeedback[itemKey] = submittedReviews[itemKey] ? '' : item.feedback || ''
       })
     })
 
     setRatings(nextRatings)
     setFeedback(nextFeedback)
-  }, [orders])
+  }, [orders, submittedReviews])
 
   const submitRating = (itemId, value) => {
     setRatings((current) => ({ ...current, [itemId]: value }))
@@ -34,6 +35,20 @@ export default function OrderTrackingPage({
 
   const submitFeedback = (itemId, value) => {
     setFeedback((current) => ({ ...current, [itemId]: value }))
+  }
+
+  const submitReview = (orderId, itemKey) => {
+    const rating = Number(ratings[itemKey] || 0)
+    const reviewText = (feedback[itemKey] || '').trim()
+
+    if (!rating && !reviewText) return
+
+    onUpdateOrderItemReview?.(orderId, itemKey, {
+      rating,
+      feedback: reviewText,
+    })
+    setSubmittedReviews((current) => ({ ...current, [itemKey]: true }))
+    setFeedback((current) => ({ ...current, [itemKey]: '' }))
   }
 
   return (
@@ -130,7 +145,7 @@ export default function OrderTrackingPage({
                                           className={Number(ratings[itemKey] || 0) >= star ? 'active' : ''}
                                           onClick={() => {
                                             submitRating(itemKey, star)
-                                            onUpdateOrderItemReview?.(order.id, itemKey, { rating: star })
+                                            setSubmittedReviews((current) => ({ ...current, [itemKey]: false }))
                                           }}
                                           aria-label={`${star} star`}
                                         >
@@ -142,18 +157,30 @@ export default function OrderTrackingPage({
 
                                   <div className="tracking-feedback-block">
                                     <label htmlFor={`feedback-${itemKey}`}>Feedback</label>
-                                    <input
-                                      id={`feedback-${itemKey}`}
-                                      type="text"
-                                      placeholder="Write a few words"
-                                      value={feedback[itemKey] || ''}
-                                      onChange={(event) => {
-                                        submitFeedback(itemKey, event.target.value)
-                                        onUpdateOrderItemReview?.(order.id, itemKey, {
-                                          feedback: event.target.value,
-                                        })
-                                      }}
-                                    />
+                                    {submittedReviews[itemKey] ? (
+                                      <div className="tracking-feedback-submitted">Submitted to admin</div>
+                                    ) : (
+                                      <>
+                                        <input
+                                          id={`feedback-${itemKey}`}
+                                          type="text"
+                                          placeholder="Write a few words"
+                                          value={feedback[itemKey] || ''}
+                                          onChange={(event) => {
+                                            submitFeedback(itemKey, event.target.value)
+                                            setSubmittedReviews((current) => ({ ...current, [itemKey]: false }))
+                                          }}
+                                        />
+                                        <button
+                                          type="button"
+                                          className="tracking-submit-feedback"
+                                          disabled={!Number(ratings[itemKey] || 0) && !(feedback[itemKey] || '').trim()}
+                                          onClick={() => submitReview(order.id, itemKey)}
+                                        >
+                                          Submit feedback
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               ) : (

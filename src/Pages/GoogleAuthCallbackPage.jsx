@@ -25,8 +25,11 @@ export default function GoogleAuthCallbackPage() {
     exchangeGoogleCode(code)
       .then((payload) => {
         persistSession(payload)
-        setMessage('Your account is ready. Redirecting you home...')
-        window.setTimeout(() => navigate('/'), 1200)
+        const requestedNextPath = window.localStorage.getItem('smartshop.loginNext') || '/'
+        const nextPath = requestedNextPath.startsWith('/') ? requestedNextPath : '/'
+        window.localStorage.removeItem('smartshop.loginNext')
+        setMessage('Your account is ready. Redirecting you...')
+        window.setTimeout(() => navigate(nextPath), 1200)
       })
       .catch((err) => {
         setMessage(err.message)

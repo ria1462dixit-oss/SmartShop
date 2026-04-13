@@ -1,5 +1,5 @@
 // reads section from URL
-// rotates wheel and changes active category
+// changes active category from arrow controls
 // syncs wheel selection with URL query param
 // changes category background image/color
 // filters preview cards
@@ -155,19 +155,41 @@ export default function CategoryPage({
                 <img src={current.portrait} alt={current.name} />
               </div>
 
-              <button className="wheel-arrow wheel-arrow-up" onClick={() => changeCategory(prevIdx)} aria-label="Rotate up">
+              <button className="wheel-arrow wheel-arrow-up" onClick={() => changeCategory(prevIdx)} aria-label="Previous category">
                 ^
               </button>
-              <button className="wheel-arrow wheel-arrow-down" onClick={() => changeCategory(nextIdx)} aria-label="Rotate down">
+              <button className="wheel-arrow wheel-arrow-down" onClick={() => changeCategory(nextIdx)} aria-label="Next category">
                 v
               </button>
+            </div>
+          </section>
+
+          <section className="category-visual-column">
+            <div className="category-portrait-frame">
+              <img src={current.portrait} alt={current.name} />
             </div>
           </section>
 
           <section className="content-column">
             <div className="content-copy">
               <p className="content-eyebrow">{current.eyebrow}</p>
-              <h1 className="content-title">{current.name}</h1>
+              <div className="category-title-row">
+                <h1 className="content-title">{current.name}</h1>
+                <button className="category-change-btn" onClick={() => changeCategory(nextIdx)} aria-label="Next category">
+                  <FiArrowRight />
+                </button>
+              </div>
+              <div className="category-pill-row" aria-label="Categories">
+                {categories.map((category, index) => (
+                  <button
+                    key={category.id}
+                    className={`category-pill ${index === activeIdx ? 'active' : ''}`}
+                    onClick={() => changeCategory(index)}
+                  >
+                    {category.short}
+                  </button>
+                ))}
+              </div>
               <div className="content-filters">
                 {current.filters.map((filter) => (
                   <button
@@ -239,12 +261,6 @@ export default function CategoryPage({
               ))}
             </div>
           </section>
-
-          <div className="next-column">
-            <button className="next-arrow" onClick={() => changeCategory(nextIdx)} aria-label="Next category">
-              ›
-            </button>
-          </div>
         </main>
       </div>
     </div>

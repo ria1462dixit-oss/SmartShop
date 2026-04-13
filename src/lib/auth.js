@@ -101,6 +101,7 @@ export function persistSession(payload) {
   if (!payload) return
   const safePayload = validateSessionPayload(payload)
   window.localStorage.setItem('smartshop.session', JSON.stringify(safePayload))
+  window.dispatchEvent(new Event('smartshop-session-change'))
 }
 
 export function readSession() {
@@ -114,6 +115,7 @@ export function readSession() {
 
 export function clearSession() {
   window.localStorage.removeItem('smartshop.session')
+  window.dispatchEvent(new Event('smartshop-session-change'))
 }
 
 export function isAdminSession(session) {

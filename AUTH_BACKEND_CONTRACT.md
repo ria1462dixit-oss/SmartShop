@@ -79,7 +79,7 @@ Success response:
   "token": "jwt-or-session-token",
   "user": {
     "id": "user-id",
-    "name": "Riya Sharma",
+    "name": "Riya Singh",
     "email": "user@example.com",
     "avatarUrl": "https://...",
     "provider": "email"
@@ -107,7 +107,7 @@ Success response:
   "token": "jwt-or-session-token",
   "user": {
     "id": "user-id",
-    "name": "Riya Sharma",
+    "name": "Riya Singh",
     "email": "user@example.com",
     "avatarUrl": "https://...",
     "provider": "google"
@@ -141,5 +141,37 @@ Minimum required structure:
     "name": "User Name",
     "email": "user@example.com"
   }
+}
+```
+
+## Stripe checkout session
+
+`POST /payments/checkout-session`
+
+Request:
+
+```json
+{
+  "items": [
+    {
+      "name": "Product name",
+      "title": "Optional subtitle",
+      "amount": 1899,
+      "quantity": 1,
+      "image": "https://..."
+    }
+  ],
+  "customerEmail": "name@example.com",
+  "successUrl": "https://your-site.com/order/confirmed",
+  "cancelUrl": "https://your-site.com/bag"
+}
+```
+
+Success response:
+
+```json
+{
+  "id": "cs_test_...",
+  "url": "https://checkout.stripe.com/..."
 }
 ```

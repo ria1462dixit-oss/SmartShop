@@ -15,7 +15,12 @@ dist-ssr
 !.env.example
 *.local
 *.pem
-
+.env
+.env.local
+node_modules/
+server/.env
+server/node_modules/
+dist/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

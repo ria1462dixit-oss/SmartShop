@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FiHeart, FiShoppingBag, FiUser } from 'react-icons/fi'
+import { FiHeart, FiMenu, FiShoppingBag, FiUser, FiX } from 'react-icons/fi'
 import { clearSession, isAdminSession, readSession } from '../lib/auth'
 import './store-navbar.css'
 
@@ -15,6 +15,7 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [session, setSession] = useState(() => readSession())
   const dropdownRef = useRef(null)
 
@@ -43,12 +44,38 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
   useEffect(() => {
     const syncSession = () => setSession(readSession())
     window.addEventListener('storage', syncSession)
+    window.addEventListener('smartshop-session-change', syncSession)
     syncSession()
-    return () => window.removeEventListener('storage', syncSession)
+    return () => {
+      window.removeEventListener('storage', syncSession)
+      window.removeEventListener('smartshop-session-change', syncSession)
+    }
   }, [])
 
   const openHomeSection = (hash = '') => {
     navigate(`/${hash}`)
+    setMenuOpen(false)
+  }
+
+  const goTo = (path) => {
+    navigate(path)
+    setMenuOpen(false)
+  }
+
+  const toggleMenu = () => {
+    setMenuOpen((value) => {
+      const next = !value
+      if (next) setOpen(false)
+      return next
+    })
+  }
+
+  const toggleProfile = () => {
+    setOpen((value) => {
+      const next = !value
+      if (next) setMenuOpen(false)
+      return next
+    })
   }
 
   const profileName = session?.user?.name || session?.name || 'Guest user'
@@ -64,16 +91,27 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
 
   return (
     <header className={`store-navbar ${className}`.trim()} style={style}>
-      <button className="store-navbar-brand" onClick={() => navigate('/')}>
+      <button className="store-navbar-brand" onClick={() => goTo('/')}>
         <span className="store-brand-dark">SMART</span>
         <span className="store-brand-accent">SHOP</span>
       </button>
 
-      <nav className="store-navbar-links">
-        <button className={isHome && !location.hash ? 'active' : ''} onClick={() => navigate('/')}>
+      <button
+        className={`store-menu-toggle ${menuOpen ? 'active' : ''}`}
+        type="button"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
+        aria-controls="store-navbar-links"
+        onClick={toggleMenu}
+      >
+        {menuOpen ? <FiX /> : <FiMenu />}
+      </button>
+
+      <nav id="store-navbar-links" className={`store-navbar-links ${menuOpen ? 'open' : ''}`}>
+        <button className={isHome && !location.hash ? 'active' : ''} onClick={() => goTo('/')}>
           Home
         </button>
-        <button className={isCategories ? 'active' : ''} onClick={() => navigate('/category')}>
+        <button className={isCategories ? 'active' : ''} onClick={() => goTo('/category')}>
           Categories
         </button>
         <button className={isDeals ? 'active' : ''} onClick={() => openHomeSection('#deals')}>
@@ -92,7 +130,7 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
           <button
             className={`store-icon-btn ${open ? 'active' : ''}`}
             aria-label="Profile"
-            onClick={() => setOpen((value) => !value)}
+            onClick={toggleProfile}
           >
             <FiUser />
           </button>
@@ -114,7 +152,10 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
         <button
           className={`store-icon-btn ${wishlistActive ? 'active' : ''}`}
           aria-label="Wishlist"
-          onClick={() => navigate('/wishlist')}
+          onClick={() => {
+            setMenuOpen(false)
+            navigate('/wishlist')
+          }}
         >
           <FiHeart />
           {wishlistCount > 0 && <span className="store-count-badge">{wishlistCount}</span>}
@@ -123,7 +164,10 @@ export default function StoreNavbar({ cartCount = 0, wishlistCount = 0, classNam
         <button
           className={`store-icon-btn ${cartActive ? 'active' : ''}`}
           aria-label="Cart"
-          onClick={() => navigate('/bag')}
+          onClick={() => {
+            setMenuOpen(false)
+            navigate('/bag')
+          }}
         >
           <FiShoppingBag />
           {cartCount > 0 && <span className="store-count-badge">{cartCount}</span>}

@@ -7,9 +7,10 @@
 
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Checkbox, Input, SimpleGrid, Stack, Textarea } from '@chakra-ui/react'
+import { Box, Checkbox, Input, SimpleGrid, Stack, Text, Textarea } from '@chakra-ui/react'
 import { FiMinus, FiPlus, FiTrash2 } from 'react-icons/fi'
 import StoreNavbar from '../components/StoreNavbar'
+import { createStripeCheckoutSession } from '../lib/stripe'
 import './orderflow.css'
 
 function formatPrice(value) {
@@ -22,9 +23,12 @@ export default function CheckoutPage({
   onUpdateItem,
   onRemoveItem,
   wishlistCount = 0,
+  isLoggedIn = false,
 }) {
   const navigate = useNavigate()
   const [editingAddress, setEditingAddress] = useState(false)
+  const [stripeLoading, setStripeLoading] = useState(false)
+  const [stripeError, setStripeError] = useState('')
   const [form, setForm] = useState({
     fullName: 'Riya',
     email: '',
@@ -56,8 +60,44 @@ export default function CheckoutPage({
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    onPlaceOrder(form)
+    if (!isLoggedIn) {
+      navigate('/login?next=/checkout')
+      return
+    }
+
+    const order = onPlaceOrder(form)
+    if (!order) return
     navigate('/order/confirmed')
+  }
+
+  const handleStripeCheckout = async () => {
+    if (!isLoggedIn) {
+      navigate('/login?next=/checkout')
+      return
+    }
+
+    setStripeError('')
+    setStripeLoading(true)
+
+    try {
+      const payload = await createStripeCheckoutSession({
+        items: cartItems.map((item) => ({
+          name: item.name,
+          title: item.title,
+          amount: item.priceValue,
+          quantity: item.quantity,
+        })),
+        customerEmail: form.email,
+        successUrl: `${window.location.origin}/order/confirmed`,
+        cancelUrl: `${window.location.origin}/bag`,
+      })
+      // window.location.assign(payload.url)
+      window.open(payload.url, '_self')
+    } catch (error) {
+      setStripeError(error.message)
+    } finally {
+      setStripeLoading(false)
+    }
   }
 
   return (
@@ -79,14 +119,14 @@ export default function CheckoutPage({
               <div className="checkout-address-head">
                 <div>
                   <p>Deliver to <strong>{form.fullName || 'Riya'}, abcabc</strong></p>
-                  <span>{form.address || 'Enter your address details below to complete the order.'}</span>
+                  <span>{form.address || 'Click on the edit address button and enter details in form.'}</span>
                 </div>
                 <button
                   type="button"
                   className="small-address-btn"
                   onClick={() => setEditingAddress((value) => !value)}
                 >
-                  {editingAddress ? 'Save address' : 'Change address'}
+                  {editingAddress ? 'Save address' : 'Click to edit address'}
                 </button>
               </div>
 
@@ -212,8 +252,22 @@ export default function CheckoutPage({
               <span>Total Amount</span>
               <strong>Rs. {formatPrice(total + 23)}</strong>
             </div>
+            {stripeError ? (
+              <Text mt={3} fontSize="12px" color="#b4235d">
+                {stripeError}
+              </Text>
+            ) : null}
             <button type="submit" className="order-primary-btn" onClick={handleSubmit}>
               Place Order
+            </button>
+            <button
+              type="button"
+              className="order-secondary-btn"
+              onClick={handleStripeCheckout}
+              disabled={stripeLoading}
+              style={{ marginTop: 12 }}
+            >
+              {stripeLoading ? 'Redirecting to Stripe...' : 'Pay with Stripe'}
             </button>
           </aside>
         </div>

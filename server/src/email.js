@@ -6,6 +6,10 @@ function hasSmtpConfig(env) {
 
 export function createMailer(env) {
   if (!hasSmtpConfig(env)) {
+    console.warn(
+      '[SmartShop] SMTP not configured — OTP will be returned as devOtp in the API response.\n' +
+        'Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in your environment to enable email delivery.'
+    )
     return null
   }
 
@@ -26,15 +30,15 @@ export async function sendOtpEmail({ transporter, env, email, code }) {
   }
 
   await transporter.sendMail({
-    from: env.SMTP_FROM || env.SMTP_USER,
+    from: env.SMTP_FROM || `"SmartShop" <${env.SMTP_USER}>`,
     to: email,
     subject: 'Your SmartShop OTP',
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #1f1637;">
-        <h2 style="margin-bottom: 8px;">SmartShop sign-in code</h2>
-        <p style="margin-bottom: 18px;">Use this one-time password to continue:</p>
-        <div style="font-size: 28px; font-weight: 700; letter-spacing: 8px; margin-bottom: 18px;">${code}</div>
-        <p style="margin: 0;">This code expires in 10 minutes.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #fff; border-radius: 12px; border: 1px solid #ececec;">
+        <h2 style="margin: 0 0 8px 0; color: #1f1637; font-size: 22px;">SmartShop sign-in code</h2>
+        <p style="margin: 0 0 24px 0; color: #555; font-size: 15px;">Use this one-time password to continue. It expires in <strong>10 minutes</strong>.</p>
+        <div style="display: inline-block; font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #d9466f; background: #fdf0f4; border-radius: 8px; padding: 16px 28px; margin-bottom: 24px;">${code}</div>
+        <p style="margin: 0; color: #999; font-size: 13px;">If you didn't request this code, you can safely ignore this email.</p>
       </div>
     `,
   })

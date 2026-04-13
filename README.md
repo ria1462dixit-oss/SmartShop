@@ -27,6 +27,7 @@ The frontend expects:
 - `POST /auth/email/request-otp`
 - `POST /auth/email/verify-otp`
 - `POST /auth/google/exchange`
+- `POST /payments/checkout-session`
 
 Detailed request/response shapes are documented in [AUTH_BACKEND_CONTRACT.md](C:/Users/admin/Desktop/SmartShop/SmartShopFrontend/AUTH_BACKEND_CONTRACT.md).
 
@@ -39,7 +40,7 @@ A MongoDB auth server scaffold now lives in `server/`.
    `cd server && npm install`
 3. Start the backend:
    `npm run dev`
-4. The frontend already points to `http://localhost:4000` through `.env.local`.
+4. Set `VITE_API_BASE_URL` in `.env` (example in `.env.example`).
 
 Notes:
 - OTP email sending works only after SMTP values are filled in `server/.env`.

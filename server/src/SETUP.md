@@ -1,57 +1,97 @@
-# SmartShop — Setup Guide
+# SmartShop — Production Fix Guide
 
-## 1. Fill in your keys
+## What was broken & what was fixed
 
-### server/.env
-| Key | Where to get it |
-|-----|----------------|
-| `MONGODB_URI` | MongoDB Atlas → Connect → Drivers |
-| `JWT_SECRET` | Any random 32+ char string |
-| `GOOGLE_CLIENT_ID` | console.cloud.google.com → APIs → Credentials |
-| `GOOGLE_CLIENT_SECRET` | Same as above |
-| `STRIPE_SECRET_KEY` | dashboard.stripe.com → Developers → API keys |
+| # | File | Problem | Fix |
+|---|------|---------|-----|
+| 1 | `server/src/stripe.js` | `apiVersion: '2026-02-25.clover'` is invalid | Changed to `'2024-06-20'` |
+| 2 | `server/.env` | `JWT_SECRET=JWT_SECRET=...` had duplicate prefix | Removed the duplicate |
+| 3 | `server/src/email.js` | SMTP vars were commented out in old `.env` | Uncommented; add Gmail App Password (see below) |
+| 4 | `frontend/.env.local` | `VITE_API_BASE_URL` pointed to `localhost:4000` | Changed to `https://smartshop-6cz4.onrender.com` |
+| 5 | `frontend/.env.local` | `VITE_GOOGLE_REDIRECT_URI` pointed to `localhost:5173` | Changed to your Vercel URL |
+| 6 | Google Cloud Console | Redirect URI was for localhost only | Must add the Vercel redirect URI (see below) |
 
-### .env.local (frontend root)
+---
+
+## Step 1 — Update Render environment variables
+
+Go to your Render dashboard → smartshop-6cz4 → Environment.
+
+Add / update these variables:
+
 | Key | Value |
 |-----|-------|
-| `VITE_API_BASE_URL` | `http://localhost:4000` |
-| `VITE_GOOGLE_CLIENT_ID` | Same as server `GOOGLE_CLIENT_ID` |
-| `VITE_GOOGLE_REDIRECT_URI` | `http://localhost:5173/auth/google/callback` |
+| `CLIENT_ORIGIN` | `https://smart-shop-phi-roan.vercel.app` |
+| `JWT_SECRET` | `smartshop2024xyzSecretKey!@123456` |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `SMTP_USER` | your Gmail address |
+| `SMTP_PASS` | your Gmail App Password (16 chars, no spaces) |
+| `SMTP_FROM` | `SmartShop <your-gmail@gmail.com>` |
 
-## 2. Google Cloud Console
+The other keys (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MONGODB_URI`, `STRIPE_SECRET_KEY`) are already set correctly in your screenshot.
+
+---
+
+## Step 2 — Get a Gmail App Password (for OTP email)
+
+1. Go to myaccount.google.com
+2. Security → 2-Step Verification (must be ON)
+3. Security → App Passwords
+4. Name it "SmartShop", click Create
+5. Copy the 16-character password — paste it as `SMTP_PASS` in Render
+
+---
+
+## Step 3 — Fix Google Cloud Console (for Google Auth)
+
 1. Go to console.cloud.google.com → APIs & Services → Credentials
-2. Create OAuth 2.0 Client ID (Web application)
-3. Add Authorized redirect URI: `http://localhost:5173/auth/google/callback`
-4. Copy Client ID and Secret into both `.env` files above
+2. Click your OAuth 2.0 Client ID
+3. Under **Authorized redirect URIs**, add:
+   ```
+   https://smart-shop-phi-roan.vercel.app/auth/google/callback
+   ```
+   (Keep the localhost one too if you still develop locally)
+4. Click Save — changes take ~5 minutes to propagate
 
-## 3. Install & run
+---
 
-```bash
-# Terminal 1 — backend
-cd server
-npm install
-npm run dev
+## Step 4 — Update frontend environment on Vercel
 
-# Terminal 2 — frontend
-cd ..
-npm install
-npm run dev
+Go to your Vercel project → Settings → Environment Variables.
+
+Add / update:
+
+| Key | Value |
+|-----|-------|
+| `VITE_API_BASE_URL` | `https://smartshop-6cz4.onrender.com` |
+| `VITE_GOOGLE_CLIENT_ID` | `3311802196259-2gmjoqpv34ck783n276a215ik43b7tvl.apps.googleusercontent.com` |
+| `VITE_GOOGLE_REDIRECT_URI` | `https://smart-shop-phi-roan.vercel.app/auth/google/callback` |
+| `VITE_GOOGLE_SCOPE` | `openid email profile` |
+
+Then **redeploy** the frontend (Vercel → Deployments → Redeploy).
+
+---
+
+## Step 5 — Replace files & redeploy backend
+
+Replace these files in your repo:
+
+```
+server/src/stripe.js       ← fixed apiVersion
+server/src/email.js        ← cleaner SMTP setup
+server/src/auth-service.js ← Google redirect URI uses env
+server/src/index.js        ← added error logging
 ```
 
-## 4. What each backend route does
+Push to GitHub → Render will auto-deploy.
 
-| Route | Purpose |
-|-------|---------|
-| `POST /auth/email/request-otp` | Generates OTP, stores in MongoDB, emails it |
-| `POST /auth/email/verify-otp` | Validates OTP, creates/finds user, returns JWT |
-| `POST /auth/google/exchange` | Exchanges Google code for profile, creates/finds user, returns JWT |
-| `POST /payments/checkout-session` | Creates Stripe Checkout session, returns redirect URL |
+---
 
-## 5. Email OTP without SMTP
+## Verify everything works
 
-If you don't set SMTP vars, the OTP is returned in the API response as `devOtp` and shown on the login screen — perfect for local testing.
-
-## 6. Files changed from original
-- `server/src/stripe.js` — fixed Stripe apiVersion from `2026-02-25.clover` → `2024-06-20`
-- `server/.env` — created (was missing)
-- `.env.local` — created (was missing)
+1. **Health check**: Visit `https://smartshop-6cz4.onrender.com/health` — should return `{ ok: true }`
+2. **OTP email**: Try signing in with email — OTP should arrive in your inbox within seconds
+3. **Google Auth**: Click "Sign in with Google" — should redirect back and log you in
+4. **Stripe**: Add item to cart → checkout → should redirect to Stripe payment page

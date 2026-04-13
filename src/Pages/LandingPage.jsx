@@ -233,6 +233,7 @@ export default function LandingPage() {
       getCategoryProducts('men')[0],
       getCategoryProducts('home')[0],
       getCategoryProducts('skincare')[0],
+      getCategoryProducts('women')[1],
     ].filter(Boolean),
     [],
   )
