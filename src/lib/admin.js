@@ -1,3 +1,5 @@
+
+
 const liveCustomers = [
   { id: 'C-102', name: 'Riya Sharma', city: 'Delhi', activity: 'Browsing Women', spend: 4200 },
   { id: 'C-118', name: 'Aman Verma', city: 'Mumbai', activity: 'Checkout started', spend: 1899 },
@@ -34,8 +36,9 @@ const weeklyViewsSeed = [
 const categoryColorMap = {
   women: '#ff5a8d',
   men: '#6965ff',
-  furniture: '#16a085',
+  home: '#16a085',    
   skincare: '#f2b84b',
+  furniture: '#16a085', 
 }
 
 function titleCase(value) {
@@ -69,13 +72,13 @@ export function buildAdminDashboardData({ orders = [], cartItems = [], wishlistI
     : 41
 
   const categoryTotals = flattenedItems.reduce((acc, item) => {
-    const key = item.category || 'other'
+    const key = item.categoryId || item.category || 'other'
     acc[key] = (acc[key] || 0) + Number(item.quantity || 1)
     return acc
   }, {})
 
   const categoryPerformance = Object.entries(categoryTotals).map(([category, quantity]) => ({
-    name: titleCase(category),
+    name: category === 'home' ? 'Furniture' : titleCase(category),
     value: quantity,
     fill: categoryColorMap[category] || '#8b5cf6',
   }))
@@ -110,7 +113,11 @@ export function buildAdminDashboardData({ orders = [], cartItems = [], wishlistI
       ? new Date(order.placedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })
       : '--',
     price: formatCurrency(order.total || 0),
-    status: order.items?.some((item) => item.deliveryStatus === 'in_transit') ? 'In Transit' : 'Completed',
+    status: order.items?.some((item) => item.deliveryStatus === 'returned')
+      ? 'Returned'
+      : order.items?.some((item) => item.deliveryStatus === 'in_transit')
+        ? 'In Transit'
+        : 'Completed',
     product: order.items?.[0]?.name || 'Store order',
   }))
 

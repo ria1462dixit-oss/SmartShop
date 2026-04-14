@@ -670,7 +670,7 @@ body { margin: 0; font-family: 'Inter', sans-serif; }
   }
 
   .category-pill-row {
-    display: flex;
+    display: none;
   }
 
   .content-column {

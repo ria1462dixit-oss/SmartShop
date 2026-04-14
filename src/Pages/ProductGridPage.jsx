@@ -51,39 +51,43 @@ export default function ProductGridPage({
         </div>
 
         <div className="product-grid-list">
-          {filtered.map((product) => (
-            <article key={product.id} className="collection-card" onClick={() => navigate(`/product/${product.id}`)}>
-              <div className="collection-card-media">
-                <img src={product.images[0]} alt={product.name} />
-                <button
-                  className={`collection-wishlist ${isWishlisted(product.id) ? 'active' : ''}`}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onToggleWishlist?.(product)
-                  }}
-                  aria-label={isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                >
-                  <FiHeart />
-                </button>
-                <div className="collection-rating">
-                  <span>{product.rating}</span>
-                  <FiStar />
-                  <span className="collection-rating-reviews">({product.reviews})</span>
+          {filtered.length ? (
+            filtered.map((product) => (
+              <article key={product.id} className="collection-card" onClick={() => navigate(`/product/${product.id}`)}>
+                <div className="collection-card-media">
+                  <img src={product.images[0]} alt={product.name} />
+                  <button
+                    className={`collection-wishlist ${isWishlisted(product.id) ? 'active' : ''}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onToggleWishlist?.(product)
+                    }}
+                    aria-label={isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <FiHeart />
+                  </button>
+                  <div className="collection-rating">
+                    <span>{product.rating}</span>
+                    <FiStar />
+                    <span className="collection-rating-reviews">({product.reviews})</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="collection-card-copy">
-                <p className="collection-brand">{product.brand}</p>
-                <h2>{product.name}</h2>
-                <p className="collection-title">{product.title}</p>
-                <div className="collection-price-row">
-                  <span className="collection-price">Rs. {product.price}</span>
-                  <span className="collection-mrp">Rs. {product.mrp}</span>
-                  <span className="collection-discount">{product.discount} OFF</span>
+                <div className="collection-card-copy">
+                  <p className="collection-brand">{product.brand}</p>
+                  <h2>{product.name}</h2>
+                  <p className="collection-title">{product.title}</p>
+                  <div className="collection-price-row">
+                    <span className="collection-price">Rs. {product.price}</span>
+                    <span className="collection-mrp">Rs. {product.mrp}</span>
+                    <span className="collection-discount">{product.discount} OFF</span>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))
+          ) : (
+            <div className="product-grid-empty">No products found for "{query}".</div>
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Box, SimpleGrid, Skeleton, Stack } from '@chakra-ui/react'
 import { isAdminSession, readSession } from './lib/auth'
 import { loadAdminStoreState, loadStoreState, saveStoreState } from './lib/store-data'
@@ -25,8 +25,6 @@ const AdminDashboardPage = lazy(() => import('./Pages/AdminDashboardPage'))
 // updates/removes cart items
 // creates placed orders with ETA and per-item delivery state
 // defines all routes
-
-
 
 const CART_KEY = 'smartshop-cart'
 const ORDER_KEY = 'smartshop-orders'
@@ -83,6 +81,20 @@ function buildOrderItems(items, etaLabel) {
   }))
 }
 
+function updateOrderItems(currentOrders, orderId, itemKey, patch) {
+  return currentOrders.map((order) => {
+    if (order.id !== orderId) return order
+
+    return {
+      ...order,
+      items: (order.items || []).map((item) => {
+        const currentKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
+        return currentKey === itemKey ? { ...item, ...patch } : item
+      }),
+    }
+  })
+}
+
 function PageSkeleton() {
   return (
     <Box minH="100vh" bg="#fff8fb" px={{ base: 3, md: 8 }} py={{ base: 3, md: 6 }}>
@@ -128,6 +140,16 @@ function PageSkeleton() {
       </Stack>
     </Box>
   )
+}
+
+function ScrollToTop() {
+  const location = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname, location.search])
+
+  return null
 }
 
 function App() {
@@ -269,6 +291,10 @@ function App() {
     setWishlistItems((current) => current.filter((item) => item.id !== productId))
   }
 
+  const addManyToWishlist = (items = []) => {
+    setWishlistItems((current) => mergeUniqueItems(current, items))
+  }
+
   const addToCart = (product, options = {}) => {
     setCartItems((current) => {
       const existingIndex = current.findIndex(
@@ -308,20 +334,21 @@ function App() {
     setCartItems((current) => current.filter((item) => item.id !== productId))
   }
 
-  const updateOrderItemReview = (orderId, itemKey, patch) => {
-    setOrders((current) =>
-      current.map((order) => {
-        if (order.id !== orderId) return order
+  const clearCart = () => {
+    setCartItems([])
+  }
 
-        return {
-          ...order,
-          items: (order.items || []).map((item) => {
-            const currentKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
-            return currentKey === itemKey ? { ...item, ...patch } : item
-          }),
-        }
-      }),
-    )
+  const moveCartItemsToWishlist = () => {
+    addManyToWishlist(cartItems)
+    setCartItems([])
+  }
+
+  const updateOrderItemReview = (orderId, itemKey, patch) => {
+    setOrders((current) => updateOrderItems(current, orderId, itemKey, patch))
+  }
+
+  const updateOrderItemStatus = (orderId, itemKey, patch) => {
+    setOrders((current) => updateOrderItems(current, orderId, itemKey, patch))
   }
 
   const placeOrder = (checkoutDetails) => {
@@ -355,6 +382,7 @@ function App() {
 
   return (
     <Suspense fallback={<PageSkeleton />}>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
@@ -414,6 +442,8 @@ function App() {
               onUpdateItem={updateCartItem}
               onRemoveItem={removeCartItem}
               wishlistCount={wishlistCount}
+              onClearCart={clearCart}
+              onMoveToWishlist={moveCartItemsToWishlist}
             />
           }
         />
@@ -427,6 +457,8 @@ function App() {
               onRemoveItem={removeCartItem}
               wishlistCount={wishlistCount}
               isLoggedIn={isLoggedIn}
+              onClearCart={clearCart}
+              onMoveToWishlist={moveCartItemsToWishlist}
             />
           }
         />
@@ -441,6 +473,7 @@ function App() {
               orders={orders}
               wishlistCount={wishlistCount}
               onUpdateOrderItemReview={updateOrderItemReview}
+              onUpdateOrderItemStatus={updateOrderItemStatus}
             />
           }
         />

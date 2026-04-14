@@ -22,9 +22,10 @@
 }
 
 .product-grid-back {
-  border: 0;
+  border: 1px solid rgba(24, 10, 20, 0.12);
   background: #fff;
-  border-radius: 999px;
+  color: #111;
+  border-radius: 8px;
   padding: 12px 18px;
   display: inline-flex;
   align-items: center;
@@ -32,6 +33,11 @@
   font-weight: 700;
   box-shadow: 0 12px 24px rgba(24, 10, 20, 0.08);
   cursor: pointer;
+}
+
+.product-grid-back:hover {
+  background: #fff;
+  color: #111;
 }
 
 .product-grid-search {
@@ -51,6 +57,11 @@
   border: 0;
   outline: none;
   background: transparent;
+  color: #111;
+}
+
+.product-grid-search input::placeholder {
+  color: rgba(24, 10, 20, 0.42);
 }
 
 .product-grid-hero {
@@ -213,5 +224,14 @@
 .collection-discount {
   color: #b52860;
   font-size: 12px;
+  font-weight: 700;
+}
+
+.product-grid-empty {
+  border: 1px solid rgba(24, 10, 20, 0.12);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.82);
+  padding: 24px;
+  color: #111;
   font-weight: 700;
 }

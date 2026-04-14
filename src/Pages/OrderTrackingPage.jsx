@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import StoreNavbar from '../components/StoreNavbar'
 import './orderflow.css'
 
@@ -7,8 +7,10 @@ export default function OrderTrackingPage({
   orders = [],
   wishlistCount = 0,
   onUpdateOrderItemReview,
+  onUpdateOrderItemStatus,
 }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [ratings, setRatings] = useState({})
   const [feedback, setFeedback] = useState({})
   const [submittedReviews, setSubmittedReviews] = useState({})
@@ -20,8 +22,8 @@ export default function OrderTrackingPage({
     orders.forEach((order) => {
       ;(order.items || []).forEach((item) => {
         const itemKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
-        nextRatings[itemKey] = item.rating || 0
-        nextFeedback[itemKey] = submittedReviews[itemKey] ? '' : item.feedback || ''
+        nextRatings[itemKey] = ratings[itemKey] ?? item.rating ?? 0
+        nextFeedback[itemKey] = feedback[itemKey] ?? (submittedReviews[itemKey] ? '' : item.feedback || '')
       })
     })
 
@@ -50,6 +52,25 @@ export default function OrderTrackingPage({
     setSubmittedReviews((current) => ({ ...current, [itemKey]: true }))
     setFeedback((current) => ({ ...current, [itemKey]: '' }))
   }
+
+  useEffect(() => {
+    const orderId = searchParams.get('orderId')
+    const itemKey = searchParams.get('itemKey')
+    const returnStatus = searchParams.get('returnStatus')
+
+    if (!orderId || !itemKey || returnStatus !== 'approved') return
+
+    onUpdateOrderItemStatus?.(orderId, itemKey, {
+      deliveryStatus: 'returned',
+      returnApprovedAt: new Date().toISOString(),
+    })
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('orderId')
+    nextParams.delete('itemKey')
+    nextParams.delete('returnStatus')
+    setSearchParams(nextParams, { replace: true })
+  }, [onUpdateOrderItemStatus, searchParams, setSearchParams])
 
   return (
     <div className="order-page-shell">
@@ -105,8 +126,14 @@ export default function OrderTrackingPage({
                     <div className="tracking-item-list">
                       {order.items.map((item) => {
                         const isDelivered = item.deliveryStatus === 'delivered'
+                        const isReturned = item.deliveryStatus === 'returned'
                         const deliveryLabel = item.deliveryDate || order?.eta || 'your scheduled date'
                         const itemKey = `${order.id}-${item.id}-${item.selectedSize}-${item.selectedColor}`
+                        const returnBotUrl =
+                          `https://prathu-bit12.github.io/Project_Smartshop/` +
+                          `?orderId=${encodeURIComponent(order.id)}` +
+                          `&itemKey=${encodeURIComponent(itemKey)}` +
+                          `&returnUrl=${encodeURIComponent(`${window.location.origin}/order/tracking?orderId=${order.id}&itemKey=${itemKey}&returnStatus=approved`)}`
 
                         return (
                           <article key={itemKey} className="tracking-item-card">
@@ -115,18 +142,22 @@ export default function OrderTrackingPage({
                               <strong>{item.name}</strong>
                               <p>{item.title}</p>
                               <span>
-                                {isDelivered
+                                {isReturned
+                                  ? 'Return approved and item marked as returned'
+                                  : isDelivered
                                   ? `Delivered on ${deliveryLabel}`
                                   : `Expected delivery by ${deliveryLabel}`}
                               </span>
 
-                              {isDelivered ? (
+                              {isReturned ? (
+                                <div className="tracking-delivery-note">Returned</div>
+                              ) : isDelivered ? (
                                 <div className="tracking-item-actions">
                                   <button
                                     className="tracking-action-btn"
                                     onClick={() =>
                                       window.open(
-                                        'https://prathu-bit12.github.io/Project_Smartshop/',
+                                        returnBotUrl,
                                         '_blank',
                                         'noopener,noreferrer',
                                       )

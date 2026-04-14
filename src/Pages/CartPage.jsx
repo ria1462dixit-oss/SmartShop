@@ -15,7 +15,14 @@ function formatPrice(value) {
   return new Intl.NumberFormat('en-IN').format(value)
 }
 
-export default function CartPage({ cartItems, onUpdateItem, onRemoveItem, wishlistCount = 0 }) {
+export default function CartPage({
+  cartItems,
+  onUpdateItem,
+  onRemoveItem,
+  wishlistCount = 0,
+  onClearCart,
+  onMoveToWishlist,
+}) {
   const navigate = useNavigate()
   const total = useMemo(
     () => cartItems.reduce((sum, item) => sum + item.priceValue * item.quantity, 0),
@@ -76,8 +83,8 @@ export default function CartPage({ cartItems, onUpdateItem, onRemoveItem, wishli
             <div className="cart-banner-card">
               <strong>{cartItems.length}/{cartItems.length} items selected</strong>
               <div className="cart-toolbar-actions">
-                <button>Remove</button>
-                <button>Move to wishlist</button>
+                <button type="button" onClick={() => onClearCart?.()}>Remove</button>
+                <button type="button" onClick={() => onMoveToWishlist?.()}>Move to wishlist</button>
               </div>
             </div>
 
@@ -95,7 +102,7 @@ export default function CartPage({ cartItems, onUpdateItem, onRemoveItem, wishli
                         <h2>{item.name}</h2>
                         <p className="cart-item-title">{item.title}</p>
                       </div>
-                      <button className="cart-remove" onClick={() => onRemoveItem(item.id)}>
+                      <button type="button" className="cart-remove" onClick={() => onRemoveItem(item.id)}>
                         <FiTrash2 />
                       </button>
                     </div>

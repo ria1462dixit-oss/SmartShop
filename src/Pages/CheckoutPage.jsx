@@ -24,6 +24,8 @@ export default function CheckoutPage({
   onRemoveItem,
   wishlistCount = 0,
   isLoggedIn = false,
+  onClearCart,
+  onMoveToWishlist,
 }) {
   const navigate = useNavigate()
   const [editingAddress, setEditingAddress] = useState(false)
@@ -61,6 +63,7 @@ export default function CheckoutPage({
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!isLoggedIn) {
+      window.alert('Kindly login to place an order.')
       navigate('/login?next=/checkout')
       return
     }
@@ -72,6 +75,7 @@ export default function CheckoutPage({
 
   const handleStripeCheckout = async () => {
     if (!isLoggedIn) {
+      window.alert('Kindly login to place an order.')
       navigate('/login?next=/checkout')
       return
     }
@@ -159,8 +163,8 @@ export default function CheckoutPage({
             <div className="cart-banner-card">
               <strong>{cartItems.length}/{cartItems.length} items selected</strong>
               <div className="cart-toolbar-actions">
-                <button type="button">Remove</button>
-                <button type="button">Move to wishlist</button>
+                <button type="button" onClick={() => onClearCart?.()}>Remove</button>
+                <button type="button" onClick={() => onMoveToWishlist?.()}>Move to wishlist</button>
               </div>
             </div>
 
@@ -257,6 +261,9 @@ export default function CheckoutPage({
                 {stripeError}
               </Text>
             ) : null}
+            <Text mt={3} fontSize="12px" color="rgba(29,16,20,0.68)">
+              In Stripe test mode use card `4242 4242 4242 4242`, any future date, and any 3 digits.
+            </Text>
             <button type="submit" className="order-primary-btn" onClick={handleSubmit}>
               Place Order
             </button>
